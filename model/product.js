@@ -53,6 +53,11 @@ const productSchema = new mongoose.Schema(
         },
       },
     ],
+    specifications: {
+      type: Map,
+      of: String, // hoặc bạn có thể dùng loại dữ liệu khác nếu cần
+      required: false, // tùy chọn, nếu thông số là bắt buộc, có thể thay đổi thành true
+    },
   },
   { timestamps: true }
 );
