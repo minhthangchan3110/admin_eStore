@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 // Define the Brand schema
 const brandSchema = new mongoose.Schema(
   {
+    image: { type: String, required: true },
     name: {
       type: String,
       required: [true, "Name is required"], // Adding custom error message

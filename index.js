@@ -14,7 +14,7 @@ app.use(bodyParser.json());
 app.use("/image/products", express.static("public/products"));
 app.use("/image/category", express.static("public/category"));
 app.use("/image/poster", express.static("public/posters"));
-
+app.use("/image/brand", express.static("public/brand"));
 const URL = process.env.MONGO_URL;
 mongoose.connect(URL);
 const db = mongoose.connection;
@@ -34,7 +34,7 @@ app.use("/users", require("./routes/user"));
 app.use("/orders", require("./routes/order"));
 app.use("/payment", require("./routes/payment"));
 app.use("/notification", require("./routes/notification"));
-
+app.use("/reviews", require("./routes/review"));
 // Example route using asyncHandler directly in app.js
 app.get(
   "/",

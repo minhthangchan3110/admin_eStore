@@ -32,21 +32,14 @@ router.get(
 
 // Login
 router.post("/login", async (req, res) => {
-  const { name, password } = req.body;
+  const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ name });
+    const user = await User.findOne({ email }); // Tìm người dùng theo email
     if (!user || user.password !== password) {
       return res
         .status(401)
-        .json({ success: false, message: "Invalid name or password." });
-    }
-
-    if (user.role !== "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Only admins can access this application.",
-      });
+        .json({ success: false, message: "Invalid email or password." });
     }
 
     res
@@ -81,14 +74,29 @@ router.get(
 );
 
 // Create a new user
+// routes/user.js
+
+// Create a new user
 router.post(
   "/register",
   asyncHandler(async (req, res) => {
-    const { name, email, password, confirmPassword } = req.body;
-    if (!name || !email || !password || !confirmPassword) {
+    const {
+      email,
+      password,
+      confirmPassword,
+      phone,
+      street,
+      city,
+      state,
+      postalCode,
+      country,
+    } = req.body;
+
+    // Kiểm tra các trường bắt buộc
+    if (!email || !password || !confirmPassword) {
       return res.status(400).json({
         success: false,
-        message: "Name, email, password, and confirm password are required.",
+        message: "Email, password, and confirm password are required.",
       });
     }
 
@@ -101,12 +109,20 @@ router.post(
     }
 
     try {
+      // Tạo người dùng mới
       const user = new User({
-        name,
         email,
         password, // Không mã hóa mật khẩu ở đây
-        avatar: "ecommerce-admin/avatar_default.png",
+        avatar: "ecommerce-admin/avatar_default.png", // Avatar mặc định
+        phone,
+        street,
+        city,
+        state,
+        postalCode,
+        country,
       });
+
+      // Lưu người dùng vào cơ sở dữ liệu
       const newUser = await user.save();
       res.json({
         success: true,
@@ -120,14 +136,29 @@ router.post(
 );
 
 // Update a user
+// routes/user.js
+
+// Update a user
 router.put(
   "/:id",
   uploadUserAvatar.single("avatar"),
   asyncHandler(async (req, res) => {
     try {
       const userID = req.params.id;
-      const { name, email, password, new_password, confirm_new_password } =
-        req.body;
+      const {
+        name,
+        email,
+        password,
+        new_password,
+        confirm_new_password,
+        phone,
+        street,
+        city,
+        state,
+        postalCode,
+        country,
+        role, // Thêm trường role vào đây
+      } = req.body;
 
       // Tìm người dùng để cập nhật
       const user = await User.findById(userID);
@@ -156,18 +187,16 @@ router.put(
       // Tạo một đối tượng để lưu trữ dữ liệu cập nhật
       const updateData = {};
 
-      // Cập nhật name và email nếu có
-      if (name) {
-        updateData.name = name;
-      }
-      if (email) {
-        updateData.email = email;
-      }
-
-      // Cập nhật mật khẩu nếu có
-      if (new_password) {
-        updateData.password = new_password; // Không mã hóa mật khẩu mới
-      }
+      // Cập nhật các trường dữ liệu nếu có
+      if (name) updateData.name = name;
+      if (email) updateData.email = email;
+      if (phone) updateData.phone = phone;
+      if (street) updateData.street = street;
+      if (city) updateData.city = city;
+      if (state) updateData.state = state;
+      if (postalCode) updateData.postalCode = postalCode;
+      if (country) updateData.country = country;
+      if (role) updateData.role = role; // Cập nhật role nếu có
 
       // Cập nhật avatar nếu có
       if (req.file) {
@@ -202,7 +231,6 @@ router.put(
 // Delete a user
 router.delete(
   "/:id",
-
   asyncHandler(async (req, res) => {
     try {
       const userID = req.params.id;

@@ -6,6 +6,7 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: [true, "Name is required"],
       trim: true,
+      unique: true,
     },
     description: {
       type: String,
@@ -40,7 +41,11 @@ const productSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "VariantType",
     },
-    proVariantId: [String],
+
+    proVariantId: {
+      type: [String],
+    },
+
     images: [
       {
         image: {

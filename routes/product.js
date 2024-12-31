@@ -4,6 +4,7 @@ const Product = require("../model/product");
 const multer = require("multer");
 const { uploadProduct } = require("../uploadFile");
 const asyncHandler = require("express-async-handler");
+
 // Hàm chuyển chuỗi thành đối tượng
 function parseSpecifications(specificationsString) {
   const specificationsObj = specificationsString
@@ -50,7 +51,7 @@ router.get(
       const product = await Product.findById(productID)
         .populate("proCategoryId", "id name")
         .populate("proSubCategoryId", "id name")
-        .populate("proBrandId", "id name")
+        .populate("proBrandId", "id name image")
         .populate("proVariantTypeId", "id name")
         .populate("proVariantId", "id name");
       if (!product) {
@@ -69,7 +70,7 @@ router.get(
   })
 );
 
-// create new product
+// Create new product
 router.post(
   "/",
   asyncHandler(async (req, res) => {
@@ -102,7 +103,7 @@ router.post(
           proBrandId,
           proVariantTypeId,
           proVariantId,
-          specifications, // Thêm thông số sản phẩm
+          specifications,
         } = req.body;
 
         if (
@@ -117,7 +118,23 @@ router.post(
             .json({ success: false, message: "Required fields are missing." });
         }
 
-        // Chuyển đổi specifications từ chuỗi sang đối tượng
+        // Kiểm tra giá offer không được lớn hơn giá thường
+        if (offerPrice && parseFloat(offerPrice) > parseFloat(price)) {
+          return res.status(400).json({
+            success: false,
+            message: "Offer price cannot exceed the regular price.",
+          });
+        }
+
+        // Kiểm tra tên sản phẩm đã tồn tại chưa
+        const productExists = await Product.findOne({ name });
+        if (productExists) {
+          return res.status(400).json({
+            success: false,
+            message: "Product name already exists.",
+          });
+        }
+
         const specificationsObj = parseSpecifications(specifications);
 
         const imageUrls = [];
@@ -141,7 +158,7 @@ router.post(
           proBrandId,
           proVariantTypeId,
           proVariantId,
-          specifications: specificationsObj, // Lưu thông số sản phẩm dưới dạng đối tượng
+          specifications: specificationsObj,
           images: imageUrls,
         });
 
@@ -152,6 +169,105 @@ router.post(
           message: "Product created successfully.",
           data: null,
         });
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  })
+);
+
+router.put(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const productId = req.params.id;
+    try {
+      uploadProduct.fields([
+        { name: "image1", maxCount: 1 },
+        { name: "image2", maxCount: 1 },
+        { name: "image3", maxCount: 1 },
+        { name: "image4", maxCount: 1 },
+        { name: "image5", maxCount: 1 },
+      ])(req, res, async function (err) {
+        if (err) {
+          return res.status(500).json({ success: false, message: err.message });
+        }
+
+        const {
+          name,
+          description,
+          quantity,
+          price,
+          offerPrice,
+          proCategoryId,
+          proSubCategoryId,
+          proBrandId,
+          proVariantTypeId,
+          proVariantId,
+          specifications,
+        } = req.body;
+
+        const productToUpdate = await Product.findById(productId);
+        if (!productToUpdate) {
+          return res
+            .status(404)
+            .json({ success: false, message: "Product not found." });
+        }
+
+        // Kiểm tra giá offer không được lớn hơn giá thường
+        if (offerPrice && parseFloat(offerPrice) > parseFloat(price)) {
+          return res
+            .status(400)
+            .json({
+              success: false,
+              message: "Offer price cannot exceed the regular price.",
+            });
+        }
+
+        productToUpdate.name = name || productToUpdate.name;
+        productToUpdate.description =
+          description || productToUpdate.description;
+        productToUpdate.quantity = quantity || productToUpdate.quantity;
+        productToUpdate.price = price || productToUpdate.price;
+        productToUpdate.offerPrice = offerPrice || productToUpdate.offerPrice;
+        productToUpdate.proCategoryId =
+          proCategoryId || productToUpdate.proCategoryId;
+        productToUpdate.proSubCategoryId =
+          proSubCategoryId || productToUpdate.proSubCategoryId;
+        productToUpdate.proBrandId = proBrandId || productToUpdate.proBrandId;
+
+        if (proVariantTypeId === "null") {
+          productToUpdate.proVariantTypeId = null;
+        } else {
+          productToUpdate.proVariantTypeId =
+            proVariantTypeId || productToUpdate.proVariantTypeId;
+        }
+        productToUpdate.proVariantId =
+          proVariantId || productToUpdate.proVariantId;
+
+        if (specifications) {
+          const specificationsObj = parseSpecifications(specifications);
+          productToUpdate.specifications = specificationsObj;
+        }
+
+        const fields = ["image1", "image2", "image3", "image4", "image5"];
+        fields.forEach((field, index) => {
+          if (req.files[field] && req.files[field].length > 0) {
+            const file = req.files[field][0];
+            const imageUrl = `http://localhost:3000/image/products/${file.filename}`;
+
+            let imageEntry = productToUpdate.images.find(
+              (img) => img.image === index + 1
+            );
+            if (imageEntry) {
+              imageEntry.url = imageUrl;
+            } else {
+              productToUpdate.images.push({ image: index + 1, url: imageUrl });
+            }
+          }
+        });
+
+        await productToUpdate.save();
+        res.json({ success: true, message: "Product updated successfully." });
       });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
@@ -187,7 +303,7 @@ router.put(
           proBrandId,
           proVariantTypeId,
           proVariantId,
-          specifications, // Thêm thông số sản phẩm
+          specifications,
         } = req.body;
 
         const productToUpdate = await Product.findById(productId);
@@ -195,6 +311,16 @@ router.put(
           return res
             .status(404)
             .json({ success: false, message: "Product not found." });
+        }
+
+        // Kiểm tra giá offer không được lớn hơn giá thường
+        if (offerPrice && parseFloat(offerPrice) > parseFloat(price)) {
+          return res
+            .status(400)
+            .json({
+              success: false,
+              message: "Offer price cannot exceed the regular price.",
+            });
         }
 
         productToUpdate.name = name || productToUpdate.name;
@@ -208,12 +334,16 @@ router.put(
         productToUpdate.proSubCategoryId =
           proSubCategoryId || productToUpdate.proSubCategoryId;
         productToUpdate.proBrandId = proBrandId || productToUpdate.proBrandId;
-        productToUpdate.proVariantTypeId =
-          proVariantTypeId || productToUpdate.proVariantTypeId;
+
+        if (proVariantTypeId === "null") {
+          productToUpdate.proVariantTypeId = null;
+        } else {
+          productToUpdate.proVariantTypeId =
+            proVariantTypeId || productToUpdate.proVariantTypeId;
+        }
         productToUpdate.proVariantId =
           proVariantId || productToUpdate.proVariantId;
 
-        // Chuyển đổi specifications từ chuỗi sang đối tượng
         if (specifications) {
           const specificationsObj = parseSpecifications(specifications);
           productToUpdate.specifications = specificationsObj;
@@ -224,6 +354,7 @@ router.put(
           if (req.files[field] && req.files[field].length > 0) {
             const file = req.files[field][0];
             const imageUrl = `http://localhost:3000/image/products/${file.filename}`;
+
             let imageEntry = productToUpdate.images.find(
               (img) => img.image === index + 1
             );
