@@ -56,38 +56,5 @@ router.post(
 );
 
 // VNPay route
-router.post(
-  "/vnpay",
-  asyncHandler(async (req, res) => {
-    try {
-      console.log("VNPay route");
-
-      const { orderId, amount, orderDescription, returnUrl, notifyUrl } =
-        req.body;
-
-      const vnpay = new VNPAY({
-        vnp_TmnCode: process.env.VNPAY_TMN_CODE,
-        vnp_HashSecret: process.env.VNPAY_HASH_SECRET,
-        vnp_Url: process.env.VNPAY_URL,
-      });
-
-      // Create payment URL
-      const paymentUrl = await vnpay.createPaymentUrl({
-        orderId: orderId,
-        amount: amount,
-        orderDescription: orderDescription,
-        returnUrl: returnUrl,
-        notifyUrl: notifyUrl,
-      });
-
-      res.json({
-        paymentUrl: paymentUrl,
-      });
-    } catch (error) {
-      console.log(error.message);
-      res.status(500).json({ error: true, message: error.message, data: null });
-    }
-  })
-);
 
 module.exports = router;
