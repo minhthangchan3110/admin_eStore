@@ -7,12 +7,6 @@ dotenv.config();
 // for stripe payment gateway
 const stripe = require("stripe")(process.env.STRIPE_SKRT_KET_TST);
 
-// for razorpay payment gateway
-const razorpay = require("razorpay");
-
-// for vn_pay payment gateway
-const VNPAY = require("vnpay");
-
 // Stripe route
 router.post(
   "/stripe",
