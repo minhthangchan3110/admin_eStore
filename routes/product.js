@@ -143,6 +143,7 @@ router.post(
           if (req.files[field] && req.files[field].length > 0) {
             const file = req.files[field][0];
             const imageUrl = `${process.env.BASE_URL}/image/products/${file.filename}`;
+            console.log("Image URL:", imageUrl); // Log để kiểm tra URL
             imageUrls.push({ image: index + 1, url: imageUrl });
           }
         });
@@ -269,7 +270,7 @@ router.put(
           if (req.files[field] && req.files[field].length > 0) {
             const file = req.files[field][0];
             const imageUrl = `${process.env.BASE_URL}/image/products/${file.filename}`;
-
+            console.log("Image URL:", imageUrl); // Log để kiểm tra URL
             let imageEntry = productToUpdate.images.find(
               (img) => img.image === index + 1
             );

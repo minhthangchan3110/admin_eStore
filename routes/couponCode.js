@@ -192,7 +192,7 @@ router.post(
   "/check-coupon",
   asyncHandler(async (req, res) => {
     console.log(req.body);
-    const { couponCode, productIds, purchaseAmount } = req.body;
+    const { couponCode, productIds, purchaseAmount, userId } = req.body;
 
     try {
       // Find the coupon with the provided coupon code
@@ -214,6 +214,14 @@ router.post(
         return res.json({ success: false, message: "Coupon is inactive." });
       }
 
+      // Check if the user has already used the coupon
+      if (coupon.usedBy.includes(userId)) {
+        return res.json({
+          success: false,
+          message: "You have already used this coupon.",
+        });
+      }
+
       // Check if the purchase amount is greater than the minimum purchase amount specified in the coupon
       if (
         coupon.minimumPurchaseAmount &&
@@ -233,7 +241,7 @@ router.post(
       ) {
         return res.json({
           success: true,
-          message: "Coupon is applicable for all orders.",
+          message: "Coupon is applicable for all orders.1",
           data: coupon,
         });
       }
