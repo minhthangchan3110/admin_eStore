@@ -76,7 +76,7 @@ router.post(
               message: "Invalid file type. Only images are allowed.",
             });
           }
-          imageUrl = `http://localhost:3000/image/brand/${req.file.filename}`;
+          imageUrl = `${process.env.BASE_URL}/image/brand/${req.file.filename}`;
         }
 
         if (!name || !subcategoryId) {
@@ -121,7 +121,7 @@ router.put(
         let image = req.body.image;
 
         if (req.file) {
-          image = `http://localhost:3000/image/brand/${req.file.filename}`;
+          image = `${process.env.BASE_URL}/image/brand/${req.file.filename}`;
         }
 
         if (!name || !subcategoryId || !image) {

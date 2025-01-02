@@ -66,7 +66,7 @@ router.post(
         const { name } = req.body;
         let imageUrl = "no_url";
         if (req.file) {
-          imageUrl = `http://localhost:3000/image/category/${req.file.filename}`;
+          imageUrl = `${process.env.BASE_URL}/image/category/${req.file.filename}`;
         }
         console.log("url ", req.file);
 
@@ -121,7 +121,7 @@ router.put(
         let image = req.body.image;
 
         if (req.file) {
-          image = `http://localhost:3000/image/category/${req.file.filename}`;
+          image = `${process.env.BASE_URL}/image/category/${req.file.filename}`;
         }
 
         if (!name || !image) {
@@ -167,24 +167,19 @@ router.delete(
       // Check if any subcategories reference this category
       const subcategories = await SubCategory.find({ categoryId: categoryID });
       if (subcategories.length > 0) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message:
-              "Cannot delete category. Subcategories are referencing it.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Cannot delete category. Subcategories are referencing it.",
+        });
       }
 
       // Check if any products reference this category
       const products = await Product.find({ proCategoryId: categoryID });
       if (products.length > 0) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Cannot delete category. Products are referencing it.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Cannot delete category. Products are referencing it.",
+        });
       }
 
       // If no subcategories or products are referencing the category, proceed with deletion

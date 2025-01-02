@@ -77,7 +77,7 @@ router.post(
 
       res.json({
         success: true,
-        message: "Review added successfully.",
+        message: "Thêm đánh giá thành công .",
         data: savedReview,
       });
     } catch (error) {

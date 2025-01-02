@@ -10,7 +10,7 @@ router.get(
     try {
       const orders = await Order.find()
         .populate("couponCode", "id couponCode discountType discountAmount")
-        .populate("userID", "id name")
+        .populate("userID", "id email")  // Chỉ lấy email của user
         .sort({ _id: -1 });
       res.json({
         success: true,
@@ -30,7 +30,7 @@ router.get(
       const userId = req.params.userId;
       const orders = await Order.find({ userID: userId })
         .populate("couponCode", "id couponCode discountType discountAmount")
-        .populate("userID", "id name")
+        .populate("userID", "id email")  // Chỉ lấy email của user
         .sort({ _id: -1 });
       res.json({
         success: true,
@@ -51,7 +51,7 @@ router.get(
       const orderID = req.params.id;
       const order = await Order.findById(orderID)
         .populate("couponCode", "id couponCode discountType discountAmount")
-        .populate("userID", "id name");
+        .populate("userID", "id email");  // Chỉ lấy email của user
       if (!order) {
         return res
           .status(404)
@@ -111,7 +111,7 @@ router.post(
       const newOrder = await order.save();
       res.json({
         success: true,
-        message: "Order created successfully.",
+        message: "Đơn hàng được tạo thành công",
         data: null,
       });
     } catch (error) {
@@ -130,7 +130,7 @@ router.put(
       if (!orderStatus) {
         return res
           .status(400)
-          .json({ success: false, message: "Order Status required." });
+          .json({ success: false, message: "Yêu cầu trạng thái đơn hàng." });
       }
 
       const updatedOrder = await Order.findByIdAndUpdate(
@@ -142,12 +142,12 @@ router.put(
       if (!updatedOrder) {
         return res
           .status(404)
-          .json({ success: false, message: "Order not found." });
+          .json({ success: false, message: "Không tìm thấy đơn hàng." });
       }
 
       res.json({
         success: true,
-        message: "Order updated successfully.",
+        message: "Đơn hàng được cập nhật thành công.",
         data: null,
       });
     } catch (error) {
@@ -166,9 +166,9 @@ router.delete(
       if (!deletedOrder) {
         return res
           .status(404)
-          .json({ success: false, message: "Order not found." });
+          .json({ success: false, message: "Không tìm thấy đơn hàng." });
       }
-      res.json({ success: true, message: "Order deleted successfully." });
+      res.json({ success: true, message: "Đơn hàng đã được xóa thành công." });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
     }

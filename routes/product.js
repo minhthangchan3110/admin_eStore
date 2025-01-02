@@ -142,7 +142,7 @@ router.post(
         fields.forEach((field, index) => {
           if (req.files[field] && req.files[field].length > 0) {
             const file = req.files[field][0];
-            const imageUrl = `http://localhost:3000/image/products/${file.filename}`;
+            const imageUrl = `${process.env.BASE_URL}/image/products/${file.filename}`;
             imageUrls.push({ image: index + 1, url: imageUrl });
           }
         });
@@ -215,18 +215,18 @@ router.put(
 
         // Kiểm tra giá offer không được lớn hơn giá thường
         if (offerPrice && parseFloat(offerPrice) > parseFloat(price)) {
-          return res
-            .status(400)
-            .json({
-              success: false,
-              message: "Offer price cannot exceed the regular price.",
-            });
+          return res.status(400).json({
+            success: false,
+            message: "Offer price cannot exceed the regular price.",
+          });
         }
 
-        productToUpdate.name = name || productToUpdate.name;
+        // Cập nhật các trường (không ghi đè giá trị rỗng)
+        productToUpdate.name = name?.trim() || productToUpdate.name;
         productToUpdate.description =
-          description || productToUpdate.description;
-        productToUpdate.quantity = quantity || productToUpdate.quantity;
+          description?.trim() || productToUpdate.description;
+        productToUpdate.quantity =
+          quantity !== undefined ? quantity : productToUpdate.quantity;
         productToUpdate.price = price || productToUpdate.price;
         productToUpdate.offerPrice = offerPrice || productToUpdate.offerPrice;
         productToUpdate.proCategoryId =
@@ -235,125 +235,40 @@ router.put(
           proSubCategoryId || productToUpdate.proSubCategoryId;
         productToUpdate.proBrandId = proBrandId || productToUpdate.proBrandId;
 
-        if (proVariantTypeId === "null") {
-          productToUpdate.proVariantTypeId = null;
-        } else {
-          productToUpdate.proVariantTypeId =
-            proVariantTypeId || productToUpdate.proVariantTypeId;
-        }
-        productToUpdate.proVariantId =
-          proVariantId || productToUpdate.proVariantId;
+        // Xử lý proVariantTypeId: Giữ nguyên giá trị hiện tại nếu không có dữ liệu
+        // Xử lý proVariantTypeId: Giữ nguyên hoặc bỏ qua nếu không hợp lệ
+        productToUpdate.proVariantTypeId =
+          proVariantTypeId && proVariantTypeId !== "null"
+            ? proVariantTypeId
+            : productToUpdate.proVariantTypeId;
 
-        if (specifications) {
-          const specificationsObj = parseSpecifications(specifications);
-          productToUpdate.specifications = specificationsObj;
-        }
-
-        const fields = ["image1", "image2", "image3", "image4", "image5"];
-        fields.forEach((field, index) => {
-          if (req.files[field] && req.files[field].length > 0) {
-            const file = req.files[field][0];
-            const imageUrl = `http://localhost:3000/image/products/${file.filename}`;
-
-            let imageEntry = productToUpdate.images.find(
-              (img) => img.image === index + 1
-            );
-            if (imageEntry) {
-              imageEntry.url = imageUrl;
-            } else {
-              productToUpdate.images.push({ image: index + 1, url: imageUrl });
+        // Xử lý proVariantId: Đảm bảo giữ nguyên nếu không được cập nhật
+        if (proVariantId) {
+          try {
+            const parsedVariantId = JSON.parse(proVariantId);
+            if (Array.isArray(parsedVariantId)) {
+              productToUpdate.proVariantId = parsedVariantId;
             }
-          }
-        });
-
-        await productToUpdate.save();
-        res.json({ success: true, message: "Product updated successfully." });
-      });
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  })
-);
-
-// Update a product
-router.put(
-  "/:id",
-  asyncHandler(async (req, res) => {
-    const productId = req.params.id;
-    try {
-      uploadProduct.fields([
-        { name: "image1", maxCount: 1 },
-        { name: "image2", maxCount: 1 },
-        { name: "image3", maxCount: 1 },
-        { name: "image4", maxCount: 1 },
-        { name: "image5", maxCount: 1 },
-      ])(req, res, async function (err) {
-        if (err) {
-          return res.status(500).json({ success: false, message: err.message });
-        }
-
-        const {
-          name,
-          description,
-          quantity,
-          price,
-          offerPrice,
-          proCategoryId,
-          proSubCategoryId,
-          proBrandId,
-          proVariantTypeId,
-          proVariantId,
-          specifications,
-        } = req.body;
-
-        const productToUpdate = await Product.findById(productId);
-        if (!productToUpdate) {
-          return res
-            .status(404)
-            .json({ success: false, message: "Product not found." });
-        }
-
-        // Kiểm tra giá offer không được lớn hơn giá thường
-        if (offerPrice && parseFloat(offerPrice) > parseFloat(price)) {
-          return res
-            .status(400)
-            .json({
+          } catch (e) {
+            return res.status(400).json({
               success: false,
-              message: "Offer price cannot exceed the regular price.",
+              message: "Invalid format for proVariantId.",
             });
+          }
         }
 
-        productToUpdate.name = name || productToUpdate.name;
-        productToUpdate.description =
-          description || productToUpdate.description;
-        productToUpdate.quantity = quantity || productToUpdate.quantity;
-        productToUpdate.price = price || productToUpdate.price;
-        productToUpdate.offerPrice = offerPrice || productToUpdate.offerPrice;
-        productToUpdate.proCategoryId =
-          proCategoryId || productToUpdate.proCategoryId;
-        productToUpdate.proSubCategoryId =
-          proSubCategoryId || productToUpdate.proSubCategoryId;
-        productToUpdate.proBrandId = proBrandId || productToUpdate.proBrandId;
-
-        if (proVariantTypeId === "null") {
-          productToUpdate.proVariantTypeId = null;
-        } else {
-          productToUpdate.proVariantTypeId =
-            proVariantTypeId || productToUpdate.proVariantTypeId;
-        }
-        productToUpdate.proVariantId =
-          proVariantId || productToUpdate.proVariantId;
-
+        // Cập nhật specifications nếu có
         if (specifications) {
           const specificationsObj = parseSpecifications(specifications);
           productToUpdate.specifications = specificationsObj;
         }
 
+        // Xử lý hình ảnh
         const fields = ["image1", "image2", "image3", "image4", "image5"];
         fields.forEach((field, index) => {
           if (req.files[field] && req.files[field].length > 0) {
             const file = req.files[field][0];
-            const imageUrl = `http://localhost:3000/image/products/${file.filename}`;
+            const imageUrl = `${process.env.BASE_URL}/image/products/${file.filename}`;
 
             let imageEntry = productToUpdate.images.find(
               (img) => img.image === index + 1
